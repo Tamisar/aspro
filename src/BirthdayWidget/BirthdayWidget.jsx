@@ -7,11 +7,11 @@ import './BirthdayWidget.css';
 const API_BASE_URL = '/api/birthdays';
 
 // Параметры пагинации
-const PAGE_SIZE = 20; // Записей на страницу
-const DEBOUNCE_DELAY = 400; // Задержка перед поиском (мс)
+const PAGE_SIZE = 20;
+const DEBOUNCE_DELAY = 400;
 
 // =========================================
-// МОКОВЫЕ ДАННЫЕ (для демонстрации)
+// МОКОВЫЕ ДАННЫЕ
 // =========================================
 const generateMockData = (page, limit, searchQuery = '') => {
   const allData = [
@@ -25,7 +25,6 @@ const generateMockData = (page, limit, searchQuery = '') => {
     { id: 8, name: 'Ольга Новикова', date: '28 Марта', phone: '+7 999 765 43 21', email: 'olga@mail.ru', company: 'ИП Новикова', category: 'В этом месяце' },
     { id: 9, name: 'Павел Лебедев', date: '01 Апреля', phone: '+7 999 111 00 00', email: 'pavel@mail.ru', company: 'ООО "Бета"', category: 'Следующий месяц' },
     { id: 10, name: 'Наталья Козлова', date: '05 Апреля', phone: '+7 999 222 00 00', email: 'nataly@mail.ru', company: 'ЗАО "Гамма"', category: 'Следующий месяц' },
-    // Генерируем больше данных для демонстрации пагинации
     ...Array.from({ length: 90 }, (_, i) => ({
       id: i + 11,
       name: `Клиент ${i + 11}`,
@@ -37,7 +36,6 @@ const generateMockData = (page, limit, searchQuery = '') => {
     }))
   ];
 
-  // Фильтрация по поисковому запросу
   let filtered = allData;
   if (searchQuery) {
     const query = searchQuery.toLowerCase();
@@ -49,13 +47,11 @@ const generateMockData = (page, limit, searchQuery = '') => {
     );
   }
 
-  // Пагинация
   const total = filtered.length;
   const start = (page - 1) * limit;
   const end = start + limit;
   const items = filtered.slice(start, end);
 
-  // Группировка по категориям
   const grouped = items.reduce((acc, item) => {
     const existing = acc.find(g => g.category === item.category);
     if (existing) {
@@ -83,12 +79,11 @@ const generateMockData = (page, limit, searchQuery = '') => {
 // API ФУНКЦИИ
 // =========================================
 const fetchBirthdays = async ({ page = 1, limit = PAGE_SIZE, searchQuery = '' } = {}) => {
-  // ДЛЯ ДЕМО - используем моковые данные
-  await new Promise(resolve => setTimeout(resolve, 500)); // Имитация задержки сети
+  await new Promise(resolve => setTimeout(resolve, 500));
   
-  // return generateMockData(page, limit, searchQuery);
+  return generateMockData(page, limit, searchQuery);
 
-  // ДЛЯ РЕАЛЬНОГО API - раскомментируйте:
+  /* ДЛЯ РЕАЛЬНОГО API:
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
@@ -97,17 +92,12 @@ const fetchBirthdays = async ({ page = 1, limit = PAGE_SIZE, searchQuery = '' } 
 
   const response = await fetch(`${API_BASE_URL}?${params}`, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      // 'Authorization': `Bearer ${token}` // если нужна авторизация
-    }
+    headers: { 'Content-Type': 'application/json' }
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
+  if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   return await response.json();
+  */
 };
 
 // =========================================
@@ -117,10 +107,7 @@ const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(handler);
   }, [value, delay]);
 
@@ -131,7 +118,6 @@ const useDebounce = (value, delay) => {
 // ОСНОВНОЙ КОМПОНЕНТ
 // =========================================
 const BirthdayWidget = () => {
-  // Состояния данных
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -142,7 +128,6 @@ const BirthdayWidget = () => {
     hasPrev: false
   });
 
-  // Состояния UI
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -153,26 +138,18 @@ const BirthdayWidget = () => {
     company: false
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState('date'); // date, name, company
-  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('asc');
 
-  // Refs
   const searchInputRef = useRef(null);
   const debounceSearch = useDebounce(searchQuery, DEBOUNCE_DELAY);
 
-  // =========================================
-  // ЗАГРУЗКА ДАННЫХ
-  // =========================================
   const loadData = useCallback(async (page = 1, query = searchQuery) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const result = await fetchBirthdays({
-        page,
-        limit: PAGE_SIZE,
-        searchQuery: query
-      });
+      const result = await fetchBirthdays({ page, limit: PAGE_SIZE, searchQuery: query });
 
       setData(result.data);
       setPagination(result.pagination);
@@ -184,32 +161,22 @@ const BirthdayWidget = () => {
     }
   }, [searchQuery]);
 
-  // Первоначальная загрузка
   useEffect(() => {
     loadData(1);
   }, []);
 
-  // Загрузка при изменении поискового запроса (с debounce)
   useEffect(() => {
-    const handler = setTimeout(() => {
-      loadData(1, debounceSearch);
-    }, DEBOUNCE_DELAY);
-
+    const handler = setTimeout(() => loadData(1, debounceSearch), DEBOUNCE_DELAY);
     return () => clearTimeout(handler);
   }, [debounceSearch, loadData]);
 
-  // =========================================
-  // ОБРАБОТЧИКИ СОБЫТИЙ
-  // =========================================
   const handlePageChange = (page) => {
     if (page < 1 || page > pagination.totalPages) return;
     loadData(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
+  const handleSearchChange = (e) => setSearchQuery(e.target.value);
 
   const handleSearchClear = () => {
     setSearchQuery('');
@@ -217,10 +184,7 @@ const BirthdayWidget = () => {
   };
 
   const handleFilterToggle = (filter) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filter]: !prev[filter]
-    }));
+    setActiveFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
   };
 
   const handleSort = (field) => {
@@ -232,20 +196,13 @@ const BirthdayWidget = () => {
     }
   };
 
-  const handleRetry = () => {
-    loadData(pagination.currentPage);
-  };
+  const handleRetry = () => loadData(pagination.currentPage);
 
   const handleExport = async () => {
-    // Экспорт данных (можно реализовать скачивание CSV)
     alert('Функция экспорта будет доступна в следующей версии');
   };
 
-  // =========================================
-  // ВСПОМОГАТЕЛЬНЫЕ КОМПОНЕНТЫ
-  // =========================================
-  
-  // Иконка поиска
+  // Иконки
   const SearchIcon = () => (
     <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="11" cy="11" r="8" />
@@ -253,21 +210,18 @@ const BirthdayWidget = () => {
     </svg>
   );
 
-  // Иконка очистки
   const ClearIcon = () => (
     <svg className="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M18 6L6 18M6 6l12 12" />
     </svg>
   );
 
-  // Иконка фильтра
   const FilterIcon = () => (
     <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
     </svg>
   );
 
-  // Иконка сортировки
   const SortIcon = ({ direction }) => (
     <svg className="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       {direction === 'asc' ? (
@@ -278,44 +232,38 @@ const BirthdayWidget = () => {
     </svg>
   );
 
-  // Индикатор загрузки
   const Loader = () => (
     <div className="loader">
       <div className="loader-spinner"></div>
-      <span>Загрузка данных...</span>
+      <span>Загрузка...</span>
     </div>
   );
 
-  // Сообщение об ошибке
   const ErrorMessage = ({ message, onRetry }) => (
     <div className="error-message">
       <div className="error-icon">⚠️</div>
       <p>{message}</p>
-      <button onClick={onRetry} className="retry-btn">Попробовать снова</button>
+      <button onClick={onRetry} className="retry-btn">Повторить</button>
     </div>
   );
 
-  // Пустое состояние
   const EmptyState = () => (
     <div className="empty-state">
       <div className="empty-icon">📭</div>
       <h3>Ничего не найдено</h3>
-      <p>Попробуйте изменить поисковый запрос или фильтры</p>
+      <p>Измените поисковый запрос или фильтры</p>
       {searchQuery && (
-        <button onClick={handleSearchClear} className="clear-search-btn">
-          Очистить поиск
-        </button>
+        <button onClick={handleSearchClear} className="clear-search-btn">Очистить поиск</button>
       )}
     </div>
   );
 
-  // Строка таблицы
   const TableRow = ({ item, isHeader = false }) => (
     <div className={`table-row ${isHeader ? 'header-row' : 'data-row'}`}>
       <div className="col-name">
         {isHeader ? (
           <button className="sort-btn" onClick={() => handleSort('name')}>
-            Имя клиента
+            Имя
             <SortIcon direction={sortBy === 'name' ? sortOrder : 'asc'} />
           </button>
         ) : (
@@ -347,45 +295,27 @@ const BirthdayWidget = () => {
     </div>
   );
 
-  // Фильтры чекбоксы
   const FilterCheckboxes = () => (
     <div className="filter-checkboxes">
       <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={activeFilters.name}
-          onChange={() => handleFilterToggle('name')}
-        />
+        <input type="checkbox" checked={activeFilters.name} onChange={() => handleFilterToggle('name')} />
         <span>Имя</span>
       </label>
       <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={activeFilters.phone}
-          onChange={() => handleFilterToggle('phone')}
-        />
+        <input type="checkbox" checked={activeFilters.phone} onChange={() => handleFilterToggle('phone')} />
         <span>Телефон</span>
       </label>
       <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={activeFilters.email}
-          onChange={() => handleFilterToggle('email')}
-        />
+        <input type="checkbox" checked={activeFilters.email} onChange={() => handleFilterToggle('email')} />
         <span>Email</span>
       </label>
       <label className="checkbox-label">
-        <input
-          type="checkbox"
-          checked={activeFilters.company}
-          onChange={() => handleFilterToggle('company')}
-        />
+        <input type="checkbox" checked={activeFilters.company} onChange={() => handleFilterToggle('company')} />
         <span>Компания</span>
       </label>
     </div>
   );
 
-  // Пагинация
   const Pagination = () => {
     const pages = [];
     const maxVisible = 5;
@@ -396,30 +326,14 @@ const BirthdayWidget = () => {
       startPage = Math.max(1, endPage - maxVisible + 1);
     }
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
+    for (let i = startPage; i <= endPage; i++) pages.push(i);
 
     if (pagination.totalPages <= 1) return null;
 
     return (
       <div className="pagination">
-        <button
-          onClick={() => handlePageChange(1)}
-          disabled={!pagination.hasPrev}
-          className="page-btn first"
-          title="Первая страница"
-        >
-          ««
-        </button>
-        
-        <button
-          onClick={() => handlePageChange(pagination.currentPage - 1)}
-          disabled={!pagination.hasPrev}
-          className="page-btn prev"
-        >
-          ←
-        </button>
+        <button onClick={() => handlePageChange(1)} disabled={!pagination.hasPrev} className="page-btn first" title="Первая">«</button>
+        <button onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.hasPrev} className="page-btn prev">←</button>
 
         {startPage > 1 && (
           <>
@@ -429,11 +343,7 @@ const BirthdayWidget = () => {
         )}
 
         {pages.map(page => (
-          <button
-            key={page}
-            onClick={() => handlePageChange(page)}
-            className={`page-btn ${page === pagination.currentPage ? 'active' : ''}`}
-          >
+          <button key={page} onClick={() => handlePageChange(page)} className={`page-btn ${page === pagination.currentPage ? 'active' : ''}`}>
             {page}
           </button>
         ))}
@@ -441,28 +351,12 @@ const BirthdayWidget = () => {
         {endPage < pagination.totalPages && (
           <>
             {endPage < pagination.totalPages - 1 && <span className="page-ellipsis">...</span>}
-            <button onClick={() => handlePageChange(pagination.totalPages)} className="page-btn">
-              {pagination.totalPages}
-            </button>
+            <button onClick={() => handlePageChange(pagination.totalPages)} className="page-btn">{pagination.totalPages}</button>
           </>
         )}
 
-        <button
-          onClick={() => handlePageChange(pagination.currentPage + 1)}
-          disabled={!pagination.hasNext}
-          className="page-btn next"
-        >
-          →
-        </button>
-
-        <button
-          onClick={() => handlePageChange(pagination.totalPages)}
-          disabled={!pagination.hasNext}
-          className="page-btn last"
-          title="Последняя страница"
-        >
-          »»
-        </button>
+        <button onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.hasNext} className="page-btn next">→</button>
+        <button onClick={() => handlePageChange(pagination.totalPages)} disabled={!pagination.hasNext} className="page-btn last" title="Последняя">»</button>
       </div>
     );
   };
@@ -472,20 +366,16 @@ const BirthdayWidget = () => {
   // =========================================
   return (
     <div className="widget-container">
-      {/* Заголовок */}
       <header className="widget-header">
         <div className="header-left">
           <h1>Дни рождения</h1>
-          <span className="total-count">
-            Найдено: {pagination.totalItems}
-          </span>
+          <span className="total-count">Найдено: {pagination.totalItems}</span>
         </div>
         <button onClick={handleExport} className="export-btn">
-          📥 Экспорт
+          📥 <span>Экспорт</span>
         </button>
       </header>
 
-      {/* Поиск и фильтры */}
       <div className="search-section">
         <div className="search-container">
           <SearchIcon />
@@ -493,7 +383,7 @@ const BirthdayWidget = () => {
             ref={searchInputRef}
             type="text"
             className="search-input"
-            placeholder="Поиск по имени, телефону, email, компании..."
+            placeholder="Поиск..."
             value={searchQuery}
             onChange={handleSearchChange}
             aria-label="Поиск клиентов"
@@ -511,37 +401,26 @@ const BirthdayWidget = () => {
           aria-expanded={showFilters}
         >
           <FilterIcon />
-          Фильтры
+          <span>Фильтры</span>
         </button>
       </div>
 
-      {/* Расширенные фильтры */}
       {showFilters && (
         <div className="filters-panel">
           <div className="filter-section">
             <h4>Поиск в полях:</h4>
             <FilterCheckboxes />
           </div>
-          
           <div className="filter-section">
             <h4>Сортировка:</h4>
             <div className="sort-options">
-              <button
-                onClick={() => handleSort('date')}
-                className={`sort-option ${sortBy === 'date' ? 'active' : ''}`}
-              >
+              <button onClick={() => handleSort('date')} className={`sort-option ${sortBy === 'date' ? 'active' : ''}`}>
                 По дате {sortBy === 'date' && <SortIcon direction={sortOrder} />}
               </button>
-              <button
-                onClick={() => handleSort('name')}
-                className={`sort-option ${sortBy === 'name' ? 'active' : ''}`}
-              >
+              <button onClick={() => handleSort('name')} className={`sort-option ${sortBy === 'name' ? 'active' : ''}`}>
                 По имени {sortBy === 'name' && <SortIcon direction={sortOrder} />}
               </button>
-              <button
-                onClick={() => handleSort('company')}
-                className={`sort-option ${sortBy === 'company' ? 'active' : ''}`}
-              >
+              <button onClick={() => handleSort('company')} className={`sort-option ${sortBy === 'company' ? 'active' : ''}`}>
                 По компании {sortBy === 'company' && <SortIcon direction={sortOrder} />}
               </button>
             </div>
@@ -549,10 +428,8 @@ const BirthdayWidget = () => {
         </div>
       )}
 
-      {/* Ошибка */}
       {error && <ErrorMessage message={error} onRetry={handleRetry} />}
 
-      {/* Основной контент */}
       <main className="widget-content">
         {isLoading ? (
           <Loader />
@@ -565,7 +442,6 @@ const BirthdayWidget = () => {
                 <span className="category-name">{group.category}</span>
                 <span className="items-count">{group.items.length}</span>
               </div>
-              
               <div className="data-table">
                 <TableRow item={{}} isHeader={true} />
                 {group.items.map((item) => (
@@ -577,21 +453,16 @@ const BirthdayWidget = () => {
         )}
       </main>
 
-      {/* Пагинация */}
       {!isLoading && data.length > 0 && <Pagination />}
 
-      {/* Информация о пагинации */}
       {!isLoading && data.length > 0 && (
         <div className="pagination-info">
-          Показано {data.reduce((acc, g) => acc + g.items.length, 0)} из {pagination.totalItems} записей
+          Показано {data.reduce((acc, g) => acc + g.items.length, 0)} из {pagination.totalItems}
         </div>
       )}
 
-      {/* Футер */}
       <footer className="widget-footer">
-        <span className="footer-info">
-          Страница {pagination.currentPage} из {pagination.totalPages}
-        </span>
+        <span className="footer-info">Страница {pagination.currentPage} из {pagination.totalPages}</span>
       </footer>
     </div>
   );
