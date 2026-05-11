@@ -1,10 +1,9 @@
-import React from 'react';
-import BirthdayWidget from './BirthdayWidget/BirthdayWidget.jsx';
+import Widget from './components/Widget';
 
 function App() {
   return (
-    <div className="App">
-      <BirthdayWidget />
+    <div className="container">
+      <Widget />
     </div>
   );
 }
